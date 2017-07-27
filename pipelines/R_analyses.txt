@@ -1,0 +1,92 @@
+#Commands used in analysis of expressed fungal peroxidase type, composition, & richness in R
+#EE
+#07.26.2017
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+##ANOVA of peroxidase types
+#Step 1. Move the table of peroxidase types created at Step 19 in the perox translation pipeline (i.e., perox_translation.txt) into your R directory folder.  To determine your R directory folder, use the following command:
+> getwd()
+#Step 2.  Read the file into R
+> perox.type <- read.table("peroxidase_type.txt", header=TRUE, sep="", na.strings="NA", dec=".", strip.white=TRUE)
+#Step 3. Determine if N deposition treatment, Site, or the interaction between Site and N deposition treatment had an effect on the proportion of cDNA sequences which were GP transcripts.
+> AnovaModel.1 <- lm(GP ~ Site*Treatment, data=perox.type, contrasts=list(Site ="contr.Sum", Treatment ="contr.Sum"))
+> Anova(AnovaModel.1)
+#Step 4. Repeat for LiP.
+> AnovaModel.2 <- lm(LiP ~ Site*Treatment, data=perox.type, contrasts=list(Site ="contr.Sum", Treatment ="contr.Sum"))
+> Anova(AnovaModel.2)
+#Step 5. Repeat for MnP.
+> AnovaModel.3 <- lm(MnP ~ Site*Treatment, data=perox.type, contrasts=list(Site ="contr.Sum", Treatment ="contr.Sum"))
+> Anova(AnovaModel.3)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+##ANOVA of expressed fungal peroxidase richness
+#Step 1. Prepare data table for analysis.
+	#Step 1a. In Excel, open the summary file of richness (i.e.,sobs for "species observed") we generated at step 25 in perox_pipeline_otu.txt. It's named perox.trim.pick.unique.good.filter.pick.unique.precluster.an.unique_list.0.08.pick.0.08.pick.0.08.subsample.groups.summary.
+	#FYI: This summary file was generated after we removed singletons OTUs, removed plots with < 100 sequences, and subsampled plots to normalize, so we want to analyze this one and not the one generated earlier in the pipeline.
+	#Step 1b. Add a new column with the heading treatment. Label plots appropriately by their respective N deposition treatment.  Plots are named by site letter and plot number. Plots 1-3 are ambient N deposition plots. Plots numbered 4-6 are experimental N deposition plots.
+	#Step 1d. Now save the edited file as a tab-delimited text file named "subsampled_richness.txt."  To determine your R working directory folder, use the following command:
+	> getwd()
+#Step 2. Read your data table into R.  Call the data set richness
+> richness <- read.table("subsampled_richness.txt", header=TRUE, sep="\t", na.strings="NA", dec=".", strip.white=TRUE)
+#Step 3. Enter the following commands to perform a two-way ANOVA and generate the ANOVA results table.  
+> AnovaModel.1 <- lm(sobs ~ site*treatment, data=richness, contrasts=list(site="contr.Sum", treatment ="contr.Sum"))
+> Anova(AnovaModel.1)
+#Step 3. Now, get the mean number of peroxidases observed in each N deposition treatment by site.
+> with(richness, (tapply(sobs, list(site, treatment), mean, na.rm=TRUE))) 
+#Step 4. Now, get the standard deviations around those means.
+> with(richness, (tapply(sobs, list(site, treatment), sd, na.rm=TRUE))) 
+#Step 5. Now count the number of samples in each treatment at each site.
+x> tabs(~ site + treatment, data=richness) 
+#end ANOVA
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+##scaled Venn Diagram with OTU abundances calculated in mothur
+#Step 1.  Open R studio.
+#Step 2.  If you haven't already, install the Venn Diagram package.
+> install.packages('VennDiagram')
+#Step 3.  Open the Venn Diagram package.
+> library(VennDiagram)
+#Step 4.  Create a Venn Diagram for OTUs from Venn calculations performed in mothur with all sequences.
+> venn.plot <- draw.pairwise.venn(115, 117, 58, c("Ambient", "Experimental"), scaled = TRUE, cat.pos = c(10, -10), cat.dist = rep(0.05, 2), cat.cex = rep(2, 2), cat.fontface = rep("plain", 2), cat.fontfamily = rep("sansserif", 2), cex = rep(3,3), fontface = rep("plain", 3), fontfamily = rep("sansserif", 3), inverted = TRUE);
+#Descriptions of each of the pieces of code in this command:
+#115 is the number of OTUs in the ambient N deposition treatment. We calculated this value at Step 24 in perox_pipeline_otu.txt.
+#117 is the number of OTUs in the experimental N deposition treatment. We calculated this value at Step 24 in perox_pipeline_otu.txt.
+#58 is the number of OTUs shared across treatments.  We calculated this value at Step 24 in perox_pipeline_otu.txt.
+#c("Ambient", "Experimental") are the labels for each circle
+#scaled = TRUE tells it I want the circle sizes to reflect sample sizes and the size of the overlap area to reflect the number of OTUs shared
+#cat.pos = c(10, -10) tells it the positions for the category labels in meridians
+#cat.dist = rep(0.05, 2) tells it to put the N deposition treatment label label 0.05 "units" from the top of both circles.  
+#cat.cex = rep(2, 2) tells it to make the N deposition treatment labels size 2 for both category labels.  Font size ranges from 1 - 5 with 5 being default.
+#cat.fontface = rep("plain", 2) tells it to make both of the N deposition treatment labels in plain (as opposed to bold or italic) text
+#cat.fontfamily = rep("sansserif", 2) tells it use sansserif font for both N deposition treatment labels 
+#cex = rep(3,3) tells it to use size 3 font for the number of OTUs inside the two circles and overlap area (i.e. 3)
+#fontface = rep("plain", 3) tells it to use plain text, instead of italic or bold, for the numbers in the venn diagram
+#fontfamily = rep("sansserif", 3) tells it to use sanserif fonts for the numbers of OTUs in the two circles and the overlap area (i.e. 3)
+#inverted = TRUE makes it so the first circle is ambient.  By default, it puts the larger circle first, which in our case is the experimental N deposition one.
+#Step 5.  The diagram should appear in the "files,plots,packages,help,viewer" pane in Rstudio, assuming you have Rstudio set up to display this pane.
+#Step 6.  In the plots tab, click on "export" and select "save as image".  A window will open up allowing you to name the file and select file type, and the directory.
+#Step 7.  Run the following two commands to clear the plot so you can generate a new diagram.
+> grid.draw(venn.plot);
+> grid.newpage();
+#end Venn
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+##PERMANOVA of expressed peroxidase OTU composition
+#Step 1. In Excel, open the shared file generated at Step 21 of perox_pipeline_otu.txt.  It's named perox.trim.pick.unique.good.filter.pick.unique.precluster.an.unique_list.0.08.pick.shared.
+#Step 2. Convert OTU abundances from number of sequences to proportional representation on a persample basis.  This will allow us to analyze across plots for which we obtained different numbers of sequences. 
+#Step 3. Save the edited shared file a tab-delimited text file named shared.proprotions.txt 
+#Step 4. Put the files shared.proportions.txt and perox.env.txt in your directory folder. To determine your R directory folder, use the following command in R:
+> getwd()
+#Step 5. If you don't already have the vegan package for ecological community analysis in R, install it:
+> install.package("vegan")
+#Step 6. Open the vegan package in R.
+> library("vegan")
+#Step 7. Read perox.env.txt file into R.  This file provides the information about Site and Treatment for each sample.
+perox.env<-read.table("perox.env.txt", sep = "\t", header = TRUE)
+#Step 8. Read the shared file with our OTU abundances as proportions into R and remove columns we no longer need.
+> shared.file<-read.table("shared.proportions.txt", row.names = 2, header = TRUE)
+> otus <-shared.file[,-c(1, 2)]
+#Step 9. Conduct a PERMANOVA using the ADONIS command with untransformed data and using a Bray-Curtis distance matrix.
+> adonis.result <- adonis(otus ~  Site * Treatment, data=perox.env, method = "bray", binary = FALSE, permutations = 9999)
+print(adonis.result)
+#Step 10. Repeat PERMANOVA with a presence-absence transformation.
+> adonis.result <- adonis(otus ~  Site * Treatment, data=perox.env, method = "bray", binary = TRUE, permutations = 9999)
+> print(adonis.result)
+#end PERMANOVA
+#end R analyses

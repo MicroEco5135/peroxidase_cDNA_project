@@ -1,0 +1,111 @@
+#EE 07.26.2017
+#This pipeline will take you through nucleotide sequence processing in mothur v.1.34.4 and preparation of files for downstream analysis with KEGGur.
+#Changes to August 2016 pipeline: bdiffs=1, pdiffs=3,maxhomop=6, minlength=359, maxlength=373, screen.seqs end=1431. Precluster with diffs=3.
+#Step 1.  Split the fastq file into fasta and qual files.
+fastq.info(fastq=perox1a.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox1b.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox2a.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox2b.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox3a.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox3b.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox4a.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox4b.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox5a.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox5b.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox6a.fastq, fasta=t, qfile=t, pacbio=t)
+fastq.info(fastq=perox6b.fastq, fasta=t, qfile=t, pacbio=t)
+#Step 2.  Get initial count of sequences per chip.
+summary.seqs(fasta=perox1a.fasta)
+summary.seqs(fasta=perox1b.fasta)
+summary.seqs(fasta=perox2a.fasta)
+summary.seqs(fasta=perox2b.fasta)
+summary.seqs(fasta=perox3a.fasta)
+summary.seqs(fasta=perox3b.fasta)
+summary.seqs(fasta=perox4a.fasta)
+summary.seqs(fasta=perox4b.fasta)
+summary.seqs(fasta=perox5a.fasta)
+summary.seqs(fasta=perox5b.fasta)
+summary.seqs(fasta=perox6a.fasta)
+summary.seqs(fasta=perox6b.fasta)
+#Step 3.  Merge files from different rounds of sequencing.
+merge.files(input=perox1a.fasta-perox1b.fasta, output=perox1.fasta)
+merge.files(input=perox2a.fasta-perox2b.fasta, output=perox2.fasta)
+merge.files(input=perox3a.fasta-perox3b.fasta, output=perox3.fasta)
+merge.files(input=perox4a.fasta-perox4b.fasta, output=perox4.fasta)
+merge.files(input=perox5a.fasta-perox5b.fasta, output=perox5.fasta)
+merge.files(input=perox6a.fasta-perox6b.fasta, output=perox6.fasta)
+merge.files(input=perox1a.qual-perox1b.qual, output=perox1.qual)
+merge.files(input=perox2a.qual-perox2b.qual, output=perox2.qual)
+merge.files(input=perox3a.qual-perox3b.qual, output=perox3.qual)
+merge.files(input=perox4a.qual-perox4b.qual, output=perox4.qual)
+merge.files(input=perox5a.qual-perox5b.qual, output=perox5.qual)
+merge.files(input=perox6a.qual-perox6b.qual, output=perox6.qual)
+#Step 4.  Get summary of merged sequence files.
+summary.seqs(fasta=perox1.fasta)
+summary.seqs(fasta=perox2.fasta)
+summary.seqs(fasta=perox3.fasta)
+summary.seqs(fasta=perox4.fasta)
+summary.seqs(fasta=perox5.fasta)
+summary.seqs(fasta=perox6.fasta)
+#Step 5.  Trim sequences.
+trim.seqs(fasta=perox1.fasta, qfile=perox1.qual, oligos=perox1.oligos, checkorient=t, qwindowaverage=25, qwindowsize=50, pdiffs=3, bdiffs=1, maxhomop=6, maxambig=0, minlength=359, maxlength=373, processors=4)
+trim.seqs(fasta=perox2.fasta, qfile=perox2.qual, oligos=perox2.oligos, checkorient=t, qwindowaverage=25, qwindowsize=50, pdiffs=3, bdiffs=1, maxhomop=6, maxambig=0, minlength=359, maxlength=373, processors=4)
+trim.seqs(fasta=perox3.fasta, qfile=perox3.qual, oligos=perox3.oligos, checkorient=t, qwindowaverage=25, qwindowsize=50, pdiffs=3, bdiffs=1, maxhomop=6, maxambig=0, minlength=359, maxlength=373, processors=4)
+trim.seqs(fasta=perox4.fasta, qfile=perox4.qual, oligos=perox4.oligos, checkorient=t, qwindowaverage=25, qwindowsize=50, pdiffs=3, bdiffs=1, maxhomop=6, maxambig=0, minlength=359, maxlength=373, processors=4)
+trim.seqs(fasta=perox5.fasta, qfile=perox5.qual, oligos=perox5.oligos, checkorient=t, qwindowaverage=25, qwindowsize=50, pdiffs=3, bdiffs=1, maxhomop=6, maxambig=0, minlength=359, maxlength=373, processors=4)
+trim.seqs(fasta=perox6.fasta, qfile=perox6.qual, oligos=perox6.oligos, checkorient=t, qwindowaverage=25, qwindowsize=50, pdiffs=3, bdiffs=1, maxhomop=6, maxambig=0, minlength=359, maxlength=373, processors=4)
+#Step 6.  Get summary of sequence files.
+summary.seqs(fasta=perox1.trim.fasta)
+summary.seqs(fasta=perox2.trim.fasta)
+summary.seqs(fasta=perox3.trim.fasta)
+summary.seqs(fasta=perox4.trim.fasta)
+summary.seqs(fasta=perox5.trim.fasta)
+summary.seqs(fasta=perox6.trim.fasta)
+#Step 7.  Merge fasta and group files for downstream processing.
+merge.files(input=perox1.trim.fasta-perox2.trim.fasta-perox3.trim.fasta-perox4.trim.fasta-perox5.trim.fasta-perox6.trim.fasta, output=perox.trim.fasta)
+merge.files(input=perox1.groups-perox2.groups-perox3.groups-perox4.groups-perox5.groups-perox6.groups, output=perox.groups)
+#Step 8.  Get a summary of your total sequences.
+summary.seqs(fasta=perox.trim.fasta)
+#Step 9. Remove mock community
+remove.groups(group=perox.groups, fasta=current, name=current, groups=MC)
+count.groups(group=current)
+#Step 10.  Dereplicate to only unique sequences to make processing faster.
+unique.seqs(fasta=current)
+#Step 11.  Align sequences and screen out sequences which align poorly.
+align.seqs(candidate=current, template=fungal_peroxidase_nt_ref_alignment.fasta, flip=t, processors=8)
+summary.seqs(fasta=current, name=current, processors=8)
+screen.seqs(fasta=current, group=current, name=current, start=975, end=1431)
+summary.seqs(fasta=current, name=current, processors=8)
+#Step 12.  Filter.
+filter.seqs(fasta=current, vertical=T, processors=8)
+#Step 13.  Check for and remove chimeras.  Get a summary post-chimera removal.
+chimera.uchime(fasta=current, name=current, group=current, dereplicate=T, processors=8)
+remove.seqs(accnos=current, fasta=current, name=current, group=current, dups=f)
+summary.seqs(fasta=current, name=current, processors=8)
+count.groups(group=current)
+#Step 14. Precluster to denoise.
+unique.seqs(fasta=current, name=current)
+pre.cluster(fasta=current, name=current, diffs=3)
+#Step 15. Remove plots with fewer than 100 sequences. As it turns out, these are ambient N deposition plots from Sites A and D.
+remove.groups(name=current, group=current, fasta=current, groups=A2-D1-D2) 
+#Step 16. Subsample so all plots have same number of sequences
+sub.sample(fasta=current, name=current, group=current, persample=t)
+count.groups(group=current)
+#Step 17. Remove plots from the experimental N deposition treatment at Sites A & D to maintain an equal number of plots in the both treatments.  Let's start by the plots yielding the fewest sequences.
+remove.groups(groups=A6-D5-D6, fasta=current, group=current, name=current)
+#Repeat the previous step with all other possible combinations of plots we could have dropped: A6-D4-D6, A6-D4-D5, A5-D4-D5, A5-D4-D6, A5-D5-D6, A4-D4-D5, A4-D4-D6, A4-D5-D6. 
+#Make sure to change directories so you don't overwrite previously generated files. Then, proceed with steps below.
+count.groups(group=current)
+#Step 18. Mege plots by treatment
+merge.groups(group=current, design=treatment.design)
+count.groups(group=current)
+#Step 19. Make count file
+count.seqs(name=current, group=current)
+#Step 20. Unalign the sequences 
+degap.seqs(fasta=current)
+#Step 21. Split the fasta and count file by treatment.
+split.groups(fasta=current, count=current, groups=ambient-experimental)
+#Step 22. Rename the output files from step 21 as perox.v1.ambient.fasta, perox.v1.ambient.count, perox.v1.experimental.fasta, perox.v1.experimental.count.  
+#Subsequent iterations of steps 17 - 21 with different combinations of experimental N deposition plots from Sites A & D excluded will be named v2 - v9.  
+#Step 23. Export the renamed fasta and count files generated at step 21 as inputs for phylogenetic analysis in KEGGur.
+#end
