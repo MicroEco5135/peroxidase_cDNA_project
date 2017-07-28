@@ -1,0 +1,72 @@
+#MnPeroxidase Workflow  JJM 07.28.2017
+
+# Acquire all KEGG manganese peroxidase sequences
+
+perl ../keggur.pulldown.pl K20205 fungal_peroxidase fungal_peroxidase 2000 ../kegg.tax 0 0
+
+# Manually added KEGG-style species codes to first of each line in EE's manually curated Mn peroxidase reference fasta, then removed duplicates and all sequences that did not start with ATG
+
+# EE-curated sequences added to KEGGur database and alignment gaps removed
+
+# New reference file run through keggur pipeline starting after the database draw-down step, using 
+
+perl ../keggur.man.pl K00000 fungal_peroxidase.complete.fix ./ 999 kegg.MnP.tax
+
+# Unix shell used to remove illegal characters from manually curated reference sequences
+
+for i in kegg.MnP.*; do sed "s/[() ]/_/g" $i > $i.fix; sed "s/__/_/g" $i.fix > $i.fix.fix; sed "s/'//g" $i.fix.fix > $i.fix.fix.fix; sed "s/_$//g" $i.fix.fix.fix > $i;done
+
+# Made reference tree in RAxML
+
+raxmlHPC-PTHREADS-SSE3 -s fungal_peroxidase.complete.nt.trim.unique.muscle.fasta -n fungal_peroxidase.tree -m GTRGAMMA -p 12345678 -N autoMRE_IGN -x 12345678 -f a -T 16
+
+# Used keggur scripts to replace species codes in trees and reference fasta files with species names
+
+perl ../fixnames.mod.pl fungal_peroxidase.complete.fix.nt.trim.unique.muscle.fasta fungal_peroxidase.complete.fix.nt.trim.unique.muscle.tax.fasta kegg.MnP.names ">" "_"
+
+perl ../fixnames.mod.pl RAxML_bipartitionsBranchLabels.fungal_peroxidase.tree RAxML_bipartitionsBranchLabels.fungal_peroxidase.temp.tree kegg.MnP.names "(" "_"
+
+perl ../fixnames.mod.pl RAxML_bipartitionsBranchLabels.fungal_peroxidase.temp.tree RAxML_bipartitionsBranchLabels.fungal_peroxidase.temp2.tree kegg.MnP.names "," "_"
+
+perl ../fixnames.mod.pl RAxML_bipartitionsBranchLabels.fungal_peroxidase.temp2.tree RAxML_bipartitionsBranchLabels.fungal_peroxidase.temp3.tree kegg.MnP.names "(" ":"
+
+perl ../fixnames.mod.pl RAxML_bipartitionsBranchLabels.fungal_peroxidase.temp3.tree RAxML_bipartitionsBranchLabels.fungal_peroxidase.tax.tree kegg.MnP.names "," ":"
+
+#Make pplacer reference package using taxtastic
+
+taxit create -l fungal_peroxidase -P fungal_peroxidase --aln-fasta fungal_peroxidase.complete.fix.nt.trim.unique.muscle.tax.fasta --tree-stats RAxML_info.fungal_peroxidase.tree --tree-file RAxML_bipartitionsBranchLabels.fungal_peroxidase.tax.tree 
+
+# For environmental sequences:
+
+# blastx used to match environmental sequences with best hit in reference fasta
+
+for i in *.fasta;do blastx -best_hit_overhang=.25 -best_hit_score_edge=0.05 -num_threads 8 -db ../../evolve/KEGGUR/fungal_peroxidase/fungal_peroxidase.complete.aa.db -query $i -out $i.csv -max_target_seqs 1 -outfmt "10 qseqid sseqid qseq sseq evalue bitscore length gaps pident qcovs qstart qend sstart send qframe mismatch" -evalue=0.0001; done
+
+# keggur scripts used to align environmental sequences with reference alignment
+
+for i in *.csv; do j=$(echo $i|sed s/.csv//); k=$(echo $j|sed s/.fasta/.count_table/); perl ../../evolve/KEGGUR/blastseqs.count.postblast.pl $i $j ../../evolve/KEGGUR/fungal_peroxidase/fungal_peroxidase.complete.cons.tax .6 ./ $k; done
+
+for i in *.csv; do j=$(echo $i|sed s/.csv/.csv.nt.fasta/); perl ../../evolve/KEGGUR/manalign.count.pl ../../evolve/KEGGUR/fungal_peroxidase/fungal_peroxidase.complete.reference.fasta $j $i $i.nt.align.fasta;done
+
+# keggur scripts used to replace species codes with species names in aligned fasta files
+
+for i in *.csv; do j=$(echo $i|sed s/.csv/.csv.nt.align.fasta/); k=$(echo $i|sed s/.csv/.csv.nt.align.tax.fasta/); perl ../../evolve/KEGGUR/fixnames.mod.pl $j $k ../../evolve/KEGGUR/fungal_peroxidase/kegg.MnP.names ">" "_";done
+
+# keggur scripts used to insert copies of sequences into fasta files based on mothur count_table files (necessary for quantitative pplacer analysis)
+
+for i in *.ambient.fasta; do j=$(echo $i|sed s/.fasta$/.count_table/); perl ../../evolve/KEGGUR/copyseqs.pl $i.csv.nt.align.tax.fasta ./ $j;done
+
+for i in *.experimental.fasta; do j=$(echo $i|sed s/.fasta$/.count_table/); perl ../../evolve/KEGGUR/copyseqs.pl $i.csv.nt.align.tax.fasta ./ $j;done
+
+# pplacer used to place environmental sequences onto reference tree
+
+for i in *tax.fasta.rep.fasta; do j=$(echo $i|sed s/.fasta$/.jplace/); pplacer -c ../../evolve/KEGGUR/fungal_peroxidase/fungal_peroxidase -o $j $i; done
+
+#For all jplace files make edpl fat trees and calculate edpl
+
+for i in *jplace; do guppy fat --edpl 3 $i; guppy edpl -o $i.edpl $i;done
+
+#For all paired comparisons, calculate kr and make kr_heat trees
+
+for i in v{1..9}; do guppy kr --list-out -o perox.$i.kr -s 1000 perox.$i.ambient.fasta.csv.nt.align.tax.fasta.rep.jplace perox.$i.experimental.fasta.csv.nt.align.tax.fasta.rep.jplace; guppy kr_heat -o perox.$i.heat.xml perox.$i.ambient.fasta.csv.nt.align.tax.fasta.rep.jplace perox.$i.experimental.fasta.csv.nt.align.tax.fasta.rep.jplace; done
+
