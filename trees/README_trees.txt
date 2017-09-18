@@ -16,6 +16,7 @@ ambient_trees		-	fat-branch phylogenetic trees of peroxidases expressed under am
 experimental_trees	-	fat-branch phylogenetic trees of peroxidases expressed under experimental N depositon for all 9 iterations of our jacknifed analysis
 heat_trees			-	fat-branch heat trees comparing fungal peroxidases expressed under ambient & experimental N deposition
 guide_tree			-	bootstrapped phylogentic tree of fungal peroxidase reference sequences which we used to guide placement of our cDNA sequences
+second_run      - trees from a second KEGGur run performed without a sequence culling step; this was done to ensure that our selection of cut-offs at the blastx query step of the original run did not alter the outcome of the analysis
 ____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 Viewing notes:
 
